@@ -1,6 +1,7 @@
 import json
 import random
 import uuid
+from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -28,7 +29,16 @@ TEST_QUESTION_COUNT = 15  # Questions per dimension in random test
 
 
 def _is_premium(user):
+    """Return True if the user has premium access.
+
+    Premium is granted when either:
+      - the user belongs to the PREMIUM_GROUP_NAME Django group, OR
+      - their UserProfile.is_premium flag is True.
+    Both routes are honoured so the admin can use whichever is most convenient.
+    """
     try:
+        if user.groups.filter(name=settings.PREMIUM_GROUP_NAME).exists():
+            return True
         return user.profile.is_premium
     except Exception:
         return False

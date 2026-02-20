@@ -31,6 +31,9 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True') != 'False'
 
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if os.environ.get('DJANGO_ALLOWED_HOSTS') else []
 
+# Name of the Django Group that grants premium access
+PREMIUM_GROUP_NAME = 'Platící uživatelé'
+
 
 # Application definition
 
