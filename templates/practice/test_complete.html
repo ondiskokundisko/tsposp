@@ -19,19 +19,30 @@
             {{ overall_pct }}%
         </div>
         <!-- Scoring legend -->
-        <div class="flex flex-wrap justify-center gap-4 text-xs text-gray-500 mb-5">
-            <span class="flex items-center gap-1"><span class="text-green-600 font-bold text-base">+1</span> správná odpověď</span>
-            <span class="flex items-center gap-1"><span class="text-red-500 font-bold text-base">−0,2</span> špatná odpověď</span>
-            <span class="flex items-center gap-1"><span class="text-gray-400 font-bold text-base">0</span> nezodpovězeno</span>
+        <div class="flex flex-wrap justify-center gap-4 text-xs text-gray-500 mb-4">
+            <span class="flex items-center gap-1.5"><span class="bg-green-100 text-green-700 font-bold px-1.5 py-0.5 rounded-full">+1</span> správná odpověď</span>
+            <span class="flex items-center gap-1.5"><span class="bg-red-100 text-red-600 font-bold px-1.5 py-0.5 rounded-full">−0,2</span> špatná odpověď</span>
+            <span class="flex items-center gap-1.5"><span class="bg-gray-100 text-gray-500 font-bold px-1.5 py-0.5 rounded-full">0</span> nezodpovězeno</span>
         </div>
-        <div class="w-full bg-gray-100 rounded-full h-4 mb-6 overflow-hidden">
+        <div class="w-full bg-gray-100 rounded-full h-4 mb-1 overflow-hidden">
             <div class="h-4 rounded-full transition-all duration-1000
                 {% if overall_pct >= 80 %}bg-green-500
                 {% elif overall_pct >= 60 %}bg-blue-500
                 {% elif overall_pct >= 40 %}bg-yellow-500
                 {% else %}bg-red-500{% endif %}"
-                style="width: {{ overall_pct|floatformat:0 }}%; {% if overall_pct < 0 %}width:0%{% endif %}"></div>
+                style="width: {% if overall_pct > 0 %}{{ overall_pct|floatformat:0 }}{% else %}0{% endif %}%"></div>
         </div>
+        <div class="flex justify-between text-xs text-gray-400 mb-5 px-1">
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-red-500 h-2" style="width:8px"></span>&lt;40%</span>
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-yellow-500 h-2" style="width:8px"></span>≥40%</span>
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-blue-500 h-2" style="width:8px"></span>≥60%</span>
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-green-500 h-2" style="width:8px"></span>≥80%</span>
+        </div>
+        {% if overall_pct < 0 %}
+        <div class="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 mb-5 text-left">
+            ⚠️ Záporné skóre – penalizace za špatné odpovědi převýšila body za správné. V TSP platí: −0,2 bodu za každou špatnou odpověď.
+        </div>
+        {% endif %}
         <div class="flex flex-wrap justify-center gap-4">
             <a href="{% url 'practice:start_random_test' %}"
                class="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition">
