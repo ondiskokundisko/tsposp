@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}{{ dimension_name }} – Procvičování{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold">{{ dimension_name }}</h1>
+            <p class="text-blue-200 text-sm mt-1">
+                {{ accessible_count }} otázek přístupných · {{ time_minutes }} min
+                {% if not premium %} · <span class="text-yellow-300 font-medium">Bezplatný plán – prvních 10</span>{% endif %}
+            </p>
+        </div>
+        <a href="{% url 'practice:dashboard' %}" class="text-blue-200 hover:text-white text-sm">← Zpět</a>
+    </div>
+</section>
+
+<section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    {% if accessible_count > 0 %}
+    <!-- Resume banner -->
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl px-6 py-4 mb-6 flex items-center justify-between animate-fade">
+        <div>
+            <p class="text-blue-800 font-semibold text-sm">Pokračovat tam, kde jste skončili</p>
+            <p class="text-blue-600 text-xs mt-0.5">Otázka {{ resume_index|add:1 }} / {{ accessible_count }}</p>
+        </div>
+        <a href="{% url 'practice:practice_question_detail' dimension resume_index %}"
+           class="bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition">
+            Pokračovat →
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Question list -->
+    <div class="space-y-3">
+        {% for item in questions %}
+        {% if not item.locked %}
+        <a href="{% url 'practice:practice_question_detail' dimension item.index %}"
+           class="flex items-center gap-4 bg-white rounded-2xl shadow-sm p-5 border border-gray-100 card-hover group animate-fade transition">
+            <!-- Number badge -->
+            <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+                {% if item.is_completed %}bg-green-100 text-green-700{% else %}bg-blue-50 text-blue-600{% endif %}">
+                {% if item.is_completed %}✓{% else %}{{ item.number }}{% endif %}
+            </div>
+            <!-- Question text -->
+            <div class="flex-1 min-w-0">
+                <p class="text-gray-800 text-sm font-medium truncate group-hover:text-blue-700 transition">
+                    {{ item.question.text|truncatechars:100 }}
+                </p>
+                <div class="flex items-center gap-3 mt-1">
+                    <span class="text-xs text-gray-400">{{ item.question.get_difficulty_display }}</span>
+                    {% if item.is_completed %}
+                    <span class="text-xs text-green-600 font-medium">● Dokončeno</span>
+                    {% endif %}
+                </div>
+            </div>
+            <svg class="w-4 h-4 text-gray-300 group-hover:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </a>
+        {% else %}
+        <!-- Locked question -->
+        <div class="flex items-center gap-4 bg-gray-50 rounded-2xl p-5 border border-gray-200 opacity-60 cursor-not-allowed">
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center text-sm font-bold">
+                🔒
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-gray-400 text-sm font-medium truncate">Otázka {{ item.number }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">Prémiový přístup</p>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    {% if not premium %}
+    <div class="mt-8 rounded-2xl overflow-hidden shadow-md">
+        <div class="bg-gradient-to-br from-blue-600 to-blue-800 p-8 text-center text-white">
+            <div class="text-4xl mb-3">🔓</div>
+            <h3 class="text-xl font-bold mb-2">Odemkněte všechny otázky</h3>
+            <p class="text-blue-200 text-sm mb-5">Prémiový přístup zahrnuje všechny otázky, náhodné testy a detailní statistiky.</p>
+            <a href="{% url 'core:pricing' %}" class="bg-white text-blue-700 px-8 py-3 rounded-full font-bold hover:bg-blue-50 transition">
+                Získat prémiový přístup →
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

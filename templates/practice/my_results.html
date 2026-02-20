@@ -15,8 +15,7 @@
         <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b border-gray-100">
                 <tr>
-                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Test / Dimenze</th>
-                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Typ</th>
+                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Dimenze</th>
                     <th class="text-left px-6 py-3 font-semibold text-gray-600">Datum</th>
                     <th class="text-right px-6 py-3 font-semibold text-gray-600">Skóre</th>
                     <th class="text-right px-6 py-3 font-semibold text-gray-600">%</th>
@@ -27,13 +26,13 @@
                 {% for attempt in attempts %}
                 <tr class="hover:bg-gray-50 transition">
                     <td class="px-6 py-3 text-gray-800 font-medium">
-                        {% if attempt.test %}{{ attempt.test.name }}{% elif attempt.dimension %}{{ attempt.dimension }}{% else %}Procvičování{% endif %}
-                    </td>
-                    <td class="px-6 py-3">
-                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold
-                            {% if attempt.attempt_type == 'test' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-600{% endif %}">
-                            {{ attempt.get_attempt_type_display }}
+                        <span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full
+                            {% if attempt.dimension == 'NAM' %}bg-blue-100 text-blue-700
+                            {% elif attempt.dimension == 'UAJ' %}bg-green-100 text-green-700
+                            {% else %}bg-purple-100 text-purple-700{% endif %}">
+                            {{ attempt.dimension }}
                         </span>
+                        <span class="ml-2 text-gray-600">{{ attempt.get_dimension_display }}</span>
                     </td>
                     <td class="px-6 py-3 text-gray-500">{{ attempt.started_at|date:"d.m.Y H:i" }}</td>
                     <td class="px-6 py-3 text-right text-gray-700">{{ attempt.score }}/{{ attempt.total_questions }}</td>

@@ -2,37 +2,40 @@ from django.db import models
 from django.contrib.auth.models import User
 from questions.models import Question, DIMENSION_CHOICES
 
-class PracticeTest(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    questions = models.ManyToManyField(Question, blank=True)
-    time_limit_minutes = models.PositiveIntegerField(default=45)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.name
+class QuestionProgress(models.Model):
+    """Tracks which questions a user has completed in practice (creative) mode."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='question_progress')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='progress')
+    is_completed = models.BooleanField(default=False)
+    last_visited = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Zkušební test'
-        verbose_name_plural = 'Zkušební testy'
+        unique_together = ['user', 'question']
+        verbose_name = 'Postup u otázky'
+        verbose_name_plural = 'Postup u otázek'
+
 
 class TestAttempt(models.Model):
+    """One dimension of a random test, or a full practice session."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='attempts')
-    test = models.ForeignKey(PracticeTest, on_delete=models.CASCADE, related_name='attempts', null=True, blank=True)
     dimension = models.CharField(max_length=10, choices=DIMENSION_CHOICES, blank=True)
+    # JSON list of question IDs randomly selected for this attempt
+    question_ids = models.TextField(default='[]')
+    # Groups 3-dimension attempts that belong to one full random test session
+    session_key = models.CharField(max_length=40, blank=True)
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     score = models.PositiveIntegerField(default=0)
     total_questions = models.PositiveIntegerField(default=0)
     attempt_type = models.CharField(
         max_length=20,
-        choices=[('practice', 'Procvičování'), ('test', 'Test')],
-        default='practice'
+        choices=[('test', 'Test')],
+        default='test',
     )
 
     def __str__(self):
-        return f"{self.user.username} - {self.started_at.strftime('%Y-%m-%d')}"
+        return f"{self.user.username} – {self.get_dimension_display()} – {self.started_at.strftime('%Y-%m-%d')}"
 
     @property
     def percentage(self):
@@ -45,13 +48,15 @@ class TestAttempt(models.Model):
         verbose_name_plural = 'Pokusy'
         ordering = ['-started_at']
 
+
 class UserAnswer(models.Model):
     attempt = models.ForeignKey(TestAttempt, on_delete=models.CASCADE, related_name='user_answers')
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     selected_answer = models.ForeignKey('questions.Answer', on_delete=models.CASCADE, null=True, blank=True)
     is_correct = models.BooleanField(default=False)
-    answered_at = models.DateTimeField(auto_now_add=True)
+    answered_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        unique_together = ['attempt', 'question']
         verbose_name = 'Odpověď uživatele'
         verbose_name_plural = 'Odpovědi uživatelů'

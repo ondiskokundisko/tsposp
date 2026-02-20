@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Přestávka – TSP Test{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-20">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-fade">
+        <div class="text-6xl mb-6">☕</div>
+        <h1 class="text-4xl font-extrabold mb-3">Přestávka!</h1>
+        <p class="text-blue-200 text-lg mb-2">Právě jste dokončili předchozí dimenzi.</p>
+        <p class="text-blue-300 text-sm">Odpočiňte si, než zahájíte další část.</p>
+    </div>
+</section>
+
+<section class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+    <div class="bg-white rounded-2xl shadow-md p-10 animate-fade">
+        <p class="text-gray-500 text-sm mb-2">Nadcházející dimenze</p>
+        <h2 class="text-2xl font-bold text-gray-800 mb-1">{{ next_name }}</h2>
+        <p class="text-blue-600 font-semibold mb-8">⏱ {{ next_time }} minut</p>
+
+        <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-5 py-4 text-sm text-yellow-800 mb-8 text-left">
+            Jakmile kliknete na <strong>Zahájit dimenzi</strong>, spustí se časovač a již ho nelze zastavit.
+        </div>
+
+        <form method="get" action="{% url 'practice:take_test_dimension' next_dim %}">
+            <button type="submit"
+                    class="gradient-bg text-white px-12 py-4 rounded-full text-xl font-extrabold shadow-xl hover:opacity-90 transition">
+                ▶ Zahájit {{ next_name }}
+            </button>
+        </form>
+    </div>
+</section>
+{% endblock %}

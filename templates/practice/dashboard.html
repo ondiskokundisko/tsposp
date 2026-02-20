@@ -5,16 +5,18 @@
 <section class="gradient-bg text-white py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 class="text-3xl font-bold mb-1">Dobrý den, {{ user.username }}!</h1>
-        <p class="text-blue-200">Vyberte si dimenzi a začněte procvičovat.</p>
+        <p class="text-blue-200">
+            {% if premium %}Máte přístup ke všem otázkám a testům.{% else %}Bezplatný přístup – prvních {{ 10 }} otázek v každé dimenzi.{% endif %}
+        </p>
     </div>
 </section>
 
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
     <!-- Dimensions -->
     <h2 class="text-xl font-bold text-gray-800 mb-6">Procvičovat podle dimenze</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         {% for dim in dimensions %}
-        {% with colors_border="border-blue-200" colors_icon="text-blue-600" colors_btn="bg-blue-600 hover:bg-blue-700" %}
         <div class="bg-white rounded-2xl shadow-md p-6 card-hover border border-gray-100 animate-slide">
             <div class="flex items-start justify-between mb-4">
                 <div>
@@ -30,17 +32,29 @@
                     {% if dim.code == 'NAM' %}🔢{% elif dim.code == 'UAJ' %}🌍{% else %}🧠{% endif %}
                 </span>
             </div>
-            <div class="text-sm text-gray-500 mb-4">
-                <span>{{ dim.count }} otázek</span>
-                <span class="mx-2">·</span>
-                <span>{{ dim.time }} min</span>
+            <div class="text-sm text-gray-500 mb-3">
+                {{ dim.accessible }} otázek přístupných
+                {% if not premium and dim.total > 10 %}<span class="text-gray-400">(z {{ dim.total }})</span>{% endif %}
+                · {{ dim.time }} min
             </div>
-            {% if dim.best %}
-            <div class="bg-gray-50 rounded-xl px-3 py-2 text-sm text-gray-600 mb-4">
-                Nejlepší výsledek: <strong>{{ dim.best.score }}/{{ dim.best.total_questions }}</strong>
+        {% if accessible_count > 0 %}
+            <div class="mb-3">
+                <div class="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Dokončeno</span>
+                    <span>{{ dim.completed }}/{{ dim.accessible }}</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2">
+                    <div class="h-2 rounded-full {% if dim.code == 'NAM' %}bg-blue-500{% elif dim.code == 'UAJ' %}bg-green-500{% else %}bg-purple-500{% endif %}"
+                         style="width: {% widthratio dim.completed dim.accessible 100 %}%; transition: width 0.8s ease;"></div>
+                </div>
             </div>
             {% endif %}
-            <a href="{% url 'practice:practice_dimension' dim.code %}"
+            {% if dim.best %}
+            <div class="bg-gray-50 rounded-xl px-3 py-2 text-xs text-gray-500 mb-4">
+                Nejlepší test: <strong class="text-gray-700">{{ dim.best.score }}/{{ dim.best.total_questions }}</strong> ({{ dim.best.percentage }}%)
+            </div>
+            {% endif %}
+            <a href="{% url 'practice:practice_list' dim.code %}"
                class="block text-center py-2.5 rounded-xl font-semibold text-white transition
                {% if dim.code == 'NAM' %}bg-blue-600 hover:bg-blue-700
                {% elif dim.code == 'UAJ' %}bg-green-600 hover:bg-green-700
@@ -48,39 +62,45 @@
                 Procvičovat →
             </a>
         </div>
-        {% endwith %}
         {% endfor %}
     </div>
 
-    <!-- Practice tests -->
-    {% if practice_tests %}
-    <h2 class="text-xl font-bold text-gray-800 mb-6">Zkušební testy</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-        {% for test in practice_tests %}
-        <div class="bg-white rounded-2xl shadow-md p-6 card-hover border border-gray-100">
-            <h3 class="text-lg font-bold text-gray-800 mb-2">{{ test.name }}</h3>
-            {% if test.description %}
-            <p class="text-sm text-gray-500 mb-3">{{ test.description }}</p>
-            {% endif %}
-            <div class="text-sm text-gray-400 mb-4">
-                {{ test.questions.count }} otázek · {{ test.time_limit_minutes }} min
+    <!-- Random Test CTA -->
+    <div class="rounded-2xl mb-10 overflow-hidden shadow-md animate-fade">
+        {% if premium %}
+        <div class="gradient-bg p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="text-white">
+                <h2 class="text-2xl font-bold mb-1">🎲 Náhodný testový test</h2>
+                <p class="text-blue-200 text-sm">15 náhodně vybraných otázek z každé dimenze · celkem 45+20+45 minut</p>
+                <p class="text-blue-300 text-xs mt-1">Otázky jsou vybrány náhodně z databáze – jako v reálném TSP.</p>
             </div>
-            <a href="{% url 'practice:take_test' test.id %}" class="block text-center py-2.5 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition">
+            <a href="{% url 'practice:start_random_test' %}"
+               class="flex-shrink-0 bg-white text-blue-700 px-8 py-3 rounded-full font-bold hover:bg-blue-50 transition shadow-lg whitespace-nowrap">
                 Spustit test →
             </a>
         </div>
-        {% endfor %}
+        {% else %}
+        <div class="bg-gradient-to-br from-gray-100 to-gray-200 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-700 mb-1">🔒 Náhodný testový test</h2>
+                <p class="text-gray-500 text-sm">Dostupné pouze pro prémiové uživatele. Odemkněte plný přístup.</p>
+            </div>
+            <a href="{% url 'core:pricing' %}"
+               class="flex-shrink-0 bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition shadow whitespace-nowrap">
+                Získat přístup →
+            </a>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
 
     <!-- Recent attempts -->
     {% if recent_attempts %}
-    <h2 class="text-xl font-bold text-gray-800 mb-4">Poslední pokusy</h2>
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Poslední výsledky</h2>
     <div class="bg-white rounded-2xl shadow-md overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b border-gray-100">
                 <tr>
-                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Test</th>
+                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Dimenze</th>
                     <th class="text-left px-6 py-3 font-semibold text-gray-600">Datum</th>
                     <th class="text-right px-6 py-3 font-semibold text-gray-600">Výsledek</th>
                     <th class="text-right px-6 py-3 font-semibold text-gray-600"></th>
@@ -89,12 +109,12 @@
             <tbody class="divide-y divide-gray-50">
                 {% for attempt in recent_attempts %}
                 <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-3 text-gray-800">
-                        {% if attempt.test %}{{ attempt.test.name }}{% elif attempt.dimension %}{{ attempt.dimension }}{% else %}Procvičování{% endif %}
+                    <td class="px-6 py-3 text-gray-800 font-medium">
+                        {{ attempt.get_dimension_display }}
                     </td>
                     <td class="px-6 py-3 text-gray-500">{{ attempt.started_at|date:"d.m.Y H:i" }}</td>
                     <td class="px-6 py-3 text-right font-semibold {% if attempt.percentage >= 60 %}text-green-600{% else %}text-red-500{% endif %}">
-                        {{ attempt.percentage }}%
+                        {{ attempt.score }}/{{ attempt.total_questions }} ({{ attempt.percentage }}%)
                     </td>
                     <td class="px-6 py-3 text-right">
                         <a href="{% url 'practice:results' attempt.id %}" class="text-blue-600 hover:underline text-xs">Detail</a>
@@ -110,3 +130,4 @@
     {% endif %}
 </section>
 {% endblock %}
+

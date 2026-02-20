@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block title %}Test – {{ dimension_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .q-pill { transition: all 0.15s ease; }
+    .q-pill.answered { background: #dbeafe; color: #1d4ed8; }
+    .q-pill.current  { background: #1d4ed8; color: white; }
+    .answer-opt { transition: all 0.15s ease; cursor: pointer; }
+    .answer-opt:hover { border-color: #3b82f6; background: #eff6ff; }
+    .answer-opt.selected { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+    .q-panel { display: none; }
+    .q-panel.active { display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Sticky header with timer and navigation -->
+<div class="gradient-bg text-white sticky top-0 z-50 shadow-xl">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+        <div>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-white bg-opacity-20">{{ dimension }}</span>
+            <span class="text-sm font-semibold ml-2">{{ dimension_name }}</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="text-right">
+                <div class="text-2xl font-mono font-extrabold" id="timer">--:--</div>
+                <div class="text-xs text-blue-200">Zbývá</div>
+            </div>
+        </div>
+    </div>
+    <!-- Question pills -->
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-3 flex flex-wrap gap-2" id="pills">
+        {% for question in questions %}
+        <button class="q-pill w-8 h-8 rounded-full text-xs font-bold border border-white border-opacity-30 text-blue-200"
+                data-index="{{ forloop.counter0 }}"
+                onclick="goTo({{ forloop.counter0 }})">
+            {{ forloop.counter }}
+        </button>
+        {% endfor %}
+    </div>
+</div>
+
+<section class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <form method="post" action="{% url 'practice:submit_test_dimension' dimension %}" id="test-form">
+        {% csrf_token %}
+
+        {% for question in questions %}
+        <div class="q-panel {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}" id="panel-{{ forloop.counter0 }}">
+            <div class="bg-white rounded-2xl shadow-md p-8 animate-fade">
+                <div class="flex items-start gap-3 mb-5">
+                    <span class="flex-shrink-0 bg-blue-100 text-blue-700 font-bold text-sm px-3 py-1 rounded-full">
+                        {{ forloop.counter }} / {{ question_count }}
+                    </span>
+                    <p class="text-gray-800 font-medium text-base leading-relaxed">{{ question.text }}</p>
+                </div>
+                {% if question.image %}
+                <img src="{{ question.image.url }}" alt="" class="rounded-xl max-h-64 mb-5 object-contain">
+                {% endif %}
+                <div class="space-y-3">
+                    {% for answer in question.answers.all %}
+                    <label class="answer-opt flex items-center gap-3 w-full text-left px-5 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 cursor-pointer"
+                           data-qid="{{ question.id }}" data-aid="{{ answer.id }}">
+                        <input type="radio" name="q_{{ question.id }}" value="{{ answer.id }}"
+                               class="sr-only"
+                               id="a_{{ answer.id }}"
+                               {% if saved_answers_dict|default:'' %}
+                               {% for sqid, said in saved_answers_parsed.items %}
+                               {% if sqid == question.id|stringformat:"s" and said == answer.id|stringformat:"s" %}checked{% endif %}
+                               {% endfor %}
+                               {% endif %}>
+                        <span class="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 radio-dot"></span>
+                        {{ answer.text }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- Per-question nav -->
+            <div class="flex items-center justify-between mt-4 px-1">
+                {% if not forloop.first %}
+                <button type="button" onclick="goTo({{ forloop.counter0|add:'-1' }})"
+                        class="text-blue-600 hover:text-blue-700 text-sm font-medium">← Předchozí</button>
+                {% else %}<span></span>{% endif %}
+                {% if not forloop.last %}
+                <button type="button" onclick="goTo({{ forloop.counter0|add:'1' }})"
+                        class="bg-blue-600 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition">
+                    Další →
+                </button>
+                {% else %}
+                <button type="submit" onclick="return confirmSubmit()"
+                        class="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:bg-green-700 transition">
+                    Odeslat dimenzi ✓
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Always-visible submit (bottom) -->
+        <div class="mt-8 text-center">
+            <button type="submit" onclick="return confirmSubmit()"
+                    class="bg-green-600 text-white px-10 py-3 rounded-xl font-bold hover:bg-green-700 transition shadow">
+                Dokončit dimenzi a pokračovat →
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Restore saved answers from session
+const savedAnswers = {{ saved_answers|safe }};
+let currentIndex = 0;
+const totalQ = {{ question_count }};
+let timeLeft = {{ time_seconds }};
+
+// Apply saved answers on load
+Object.entries(savedAnswers).forEach(([qid, aid]) => {
+    const radio = document.getElementById('a_' + aid);
+    if (radio) {
+        radio.checked = true;
+        radio.closest('label').classList.add('selected');
+        radio.closest('label').querySelector('.radio-dot').classList.add('bg-blue-500', 'border-blue-500');
+    }
+    updatePill(getPanelIndexByQid(qid), true);
+});
+
+function getPanelIndexByQid(qid) {
+    const panel = document.querySelector(`label[data-qid="${qid}"]`);
+    if (!panel) return -1;
+    return parseInt(panel.closest('.q-panel').dataset.index);
+}
+
+// Answer selection handler
+document.querySelectorAll('.answer-opt').forEach(label => {
+    label.addEventListener('click', async function () {
+        const qid = this.dataset.qid;
+        const aid = this.dataset.aid;
+        // Visual update
+        document.querySelectorAll(`label[data-qid="${qid}"]`).forEach(l => {
+            l.classList.remove('selected');
+            l.querySelector('.radio-dot').className = 'w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 radio-dot';
+        });
+        this.classList.add('selected');
+        this.querySelector('.radio-dot').className = 'w-4 h-4 rounded-full border-2 border-blue-500 bg-blue-500 flex-shrink-0 radio-dot';
+        this.querySelector('input').checked = true;
+        // Save via AJAX
+        await fetch(`/procvicovani/test/dimenze/{{ dimension }}/odpoved/`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+            body: JSON.stringify({question_id: parseInt(qid), answer_id: parseInt(aid)})
+        });
+        updatePill(currentIndex, true);
+    });
+});
+
+function goTo(index) {
+    if (index < 0 || index >= totalQ) return;
+    document.querySelectorAll('.q-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + index).classList.add('active');
+    currentIndex = index;
+    updatePillCurrent();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function updatePill(index, answered) {
+    const pill = document.querySelector(`.q-pill[data-index="${index}"]`);
+    if (!pill) return;
+    if (answered) pill.classList.add('answered');
+}
+
+function updatePillCurrent() {
+    document.querySelectorAll('.q-pill').forEach((p, i) => {
+        p.classList.toggle('current', i === currentIndex);
+    });
+}
+
+// Timer
+const timerEl = document.getElementById('timer');
+function tick() {
+    if (timeLeft <= 0) {
+        timerEl.textContent = '00:00';
+        timerEl.classList.add('text-red-300');
+        document.getElementById('test-form').submit();
+        return;
+    }
+    const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    const s = (timeLeft % 60).toString().padStart(2, '0');
+    timerEl.textContent = m + ':' + s;
+    if (timeLeft <= 120) timerEl.classList.add('text-red-300');
+    timeLeft--;
+    setTimeout(tick, 1000);
+}
+tick();
+
+function confirmSubmit() {
+    const answered = document.querySelectorAll('.q-pill.answered').length;
+    const unanswered = totalQ - answered;
+    if (unanswered > 0) {
+        return confirm(`Máte ${unanswered} nezodpovězených otázek. Opravdu odeslat?`);
+    }
+    return confirm('Odeslat dimenzi a pokračovat na přestávku?');
+}
+
+function getCsrf() {
+    return document.cookie.match('(^|;) ?csrftoken=([^;]*)(;|$)')?.[2] ?? '';
+}
+
+updatePillCurrent();
+</script>
+{% endblock %}

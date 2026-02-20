@@ -1,12 +1,10 @@
 from django.shortcuts import render
-from questions.models import Question, DIMENSION_CHOICES
-from practice.models import PracticeTest
+from questions.models import Question
+
 
 def home(request):
     stats = {
         'question_count': Question.objects.filter(is_active=True).count(),
-        'test_count': PracticeTest.objects.filter(is_active=True).count(),
-        'user_count': 0,
     }
     dimensions = [
         {
@@ -36,11 +34,14 @@ def home(request):
     ]
     return render(request, 'core/home.html', {'stats': stats, 'dimensions': dimensions})
 
+
 def about(request):
     return render(request, 'core/about.html')
 
+
 def pricing(request):
     return render(request, 'core/pricing.html')
+
 
 def contact(request):
     return render(request, 'core/contact.html')
