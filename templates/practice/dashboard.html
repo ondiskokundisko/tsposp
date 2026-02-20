@@ -51,7 +51,7 @@
             {% endif %}
             {% if dim.best %}
             <div class="bg-gray-50 rounded-xl px-3 py-2 text-xs text-gray-500 mb-4">
-                Nejlepší test: <strong class="text-gray-700">{{ dim.best.score }}/{{ dim.best.total_questions }}</strong> ({{ dim.best.percentage }}%)
+                Nejlepší test: <strong class="text-gray-700">{{ dim.best.score|floatformat:2 }}/{{ dim.best.total_questions }}</strong> ({{ dim.best.percentage }}%)
             </div>
             {% endif %}
             <a href="{% url 'practice:practice_list' dim.code %}"
@@ -113,8 +113,8 @@
                         {{ attempt.get_dimension_display }}
                     </td>
                     <td class="px-6 py-3 text-gray-500">{{ attempt.started_at|date:"d.m.Y H:i" }}</td>
-                    <td class="px-6 py-3 text-right font-semibold {% if attempt.percentage >= 60 %}text-green-600{% else %}text-red-500{% endif %}">
-                        {{ attempt.score }}/{{ attempt.total_questions }} ({{ attempt.percentage }}%)
+                    <td class="px-6 py-3 text-right font-semibold {% if attempt.percentage >= 60 %}text-green-600{% elif attempt.percentage >= 0 %}text-blue-600{% else %}text-red-500{% endif %}">
+                        {{ attempt.score|floatformat:2 }}/{{ attempt.total_questions }} ({{ attempt.percentage }}%)
                     </td>
                     <td class="px-6 py-3 text-right">
                         <a href="{% url 'practice:results' attempt.id %}" class="text-blue-600 hover:underline text-xs">Detail</a>

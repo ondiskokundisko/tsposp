@@ -348,7 +348,7 @@ def submit_test_dimension(request, dimension):
     )
 
     questions = Question.objects.filter(id__in=question_ids).prefetch_related('answers')
-    score = 0
+    score = 0.0
     total = len(question_ids)
 
     for question in questions:
@@ -360,7 +360,9 @@ def submit_test_dimension(request, dimension):
                 selected = Answer.objects.get(id=int(answer_id), question=question)
                 is_correct = selected.is_correct
                 if is_correct:
-                    score += 1
+                    score += 1.0
+                else:
+                    score -= 0.2          # TSP penalty for wrong answer
             except Answer.DoesNotExist:
                 pass
         UserAnswer.objects.update_or_create(
@@ -369,7 +371,7 @@ def submit_test_dimension(request, dimension):
             defaults={'selected_answer': selected, 'is_correct': is_correct},
         )
 
-    attempt.score = score
+    attempt.score = round(score, 2)
     attempt.total_questions = total
     attempt.save()
 
@@ -428,7 +430,8 @@ def test_complete(request):
             except TestAttempt.DoesNotExist:
                 pass
 
-    overall_pct = round((total_score / total_questions) * 100) if total_questions else 0
+    overall_pct = round((total_score / total_questions) * 100, 1) if total_questions else 0
+    total_score = round(total_score, 2)
 
     return render(request, 'practice/test_complete.html', {
         'attempts': attempts,

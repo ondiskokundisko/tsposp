@@ -26,7 +26,8 @@ class TestAttempt(models.Model):
     session_key = models.CharField(max_length=40, blank=True)
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
-    score = models.PositiveIntegerField(default=0)
+    # Float to support TSP scoring: +1 correct, -0.2 wrong, 0 unanswered
+    score = models.FloatField(default=0.0)
     total_questions = models.PositiveIntegerField(default=0)
     attempt_type = models.CharField(
         max_length=20,
@@ -41,7 +42,12 @@ class TestAttempt(models.Model):
     def percentage(self):
         if self.total_questions == 0:
             return 0
-        return round((self.score / self.total_questions) * 100)
+        return round((self.score / self.total_questions) * 100, 1)
+
+    @property
+    def percentage_clamped(self):
+        """Percentage clamped to 0–100 for use as a progress bar width."""
+        return max(0.0, min(100.0, self.percentage))
 
     class Meta:
         verbose_name = 'Pokus'
@@ -60,3 +66,12 @@ class UserAnswer(models.Model):
         unique_together = ['attempt', 'question']
         verbose_name = 'Odpověď uživatele'
         verbose_name_plural = 'Odpovědi uživatelů'
+
+    @property
+    def points(self):
+        """Points awarded for this answer: +1 correct, -0.2 wrong, 0 unanswered."""
+        if self.is_correct:
+            return 1
+        if self.selected_answer is not None:
+            return -0.2
+        return 0

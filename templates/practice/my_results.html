@@ -35,8 +35,8 @@
                         <span class="ml-2 text-gray-600">{{ attempt.get_dimension_display }}</span>
                     </td>
                     <td class="px-6 py-3 text-gray-500">{{ attempt.started_at|date:"d.m.Y H:i" }}</td>
-                    <td class="px-6 py-3 text-right text-gray-700">{{ attempt.score }}/{{ attempt.total_questions }}</td>
-                    <td class="px-6 py-3 text-right font-bold {% if attempt.percentage >= 60 %}text-green-600{% else %}text-red-500{% endif %}">
+                    <td class="px-6 py-3 text-right text-gray-700">{{ attempt.score|floatformat:2 }}/{{ attempt.total_questions }}</td>
+                    <td class="px-6 py-3 text-right font-bold {% if attempt.percentage >= 60 %}text-green-600{% elif attempt.percentage >= 0 %}text-blue-600{% else %}text-red-500{% endif %}">
                         {{ attempt.percentage }}%
                     </td>
                     <td class="px-6 py-3 text-right">
