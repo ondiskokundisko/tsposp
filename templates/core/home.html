@@ -67,7 +67,7 @@
                 <span>{{ dim.count }} otázek</span>
             </div>
             {% if user.is_authenticated %}
-            <a href="{% url 'practice:practice_dimension' dim.code %}"
+            <a href="{% url 'practice:practice_list' dim.code %}"
                class="block text-center py-2.5 rounded-xl font-semibold transition
                {% if dim.color == 'blue' %}bg-blue-600 text-white hover:bg-blue-700
                {% elif dim.color == 'green' %}bg-green-600 text-white hover:bg-green-700
