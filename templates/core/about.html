@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}O nás{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-16 text-center">
+    <div class="max-w-3xl mx-auto px-4 animate-fade">
+        <h1 class="text-4xl font-extrabold mb-4">O nás</h1>
+        <p class="text-blue-200 text-lg">Pomáháme studentům uspět u zkoušky TSP na Masarykově univerzitě.</p>
+    </div>
+</section>
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="bg-white rounded-2xl shadow-md p-10 animate-slide">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Naše mise</h2>
+        <p class="text-gray-600 mb-6">
+            TSPosp je online platforma zaměřená na efektivní přípravu na Test studijních předpokladů (TSP),
+            který je součástí přijímacího řízení na <strong>Masarykovu univerzitu</strong> v Brně.
+        </p>
+        <p class="text-gray-600 mb-6">
+            Nabízíme procvičování všech tří dimenzí testu – numericko-analytického myšlení, uvažování
+            v anglickém jazyce a kritického myšlení. Každá otázka je doplněna vysvětlením, abyste
+            pochopili nejen správnou odpověď, ale i postup řešení.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <div class="bg-blue-50 rounded-xl p-6 text-center">
+                <div class="text-4xl mb-3">📚</div>
+                <h3 class="font-bold text-gray-800 mb-1">Kvalitní otázky</h3>
+                <p class="text-sm text-gray-500">Otázky odpovídají reálnému TSP testu</p>
+            </div>
+            <div class="bg-green-50 rounded-xl p-6 text-center">
+                <div class="text-4xl mb-3">⏱️</div>
+                <h3 class="font-bold text-gray-800 mb-1">Časový limit</h3>
+                <p class="text-sm text-gray-500">Trénuj pod reálnými časovými podmínkami</p>
+            </div>
+            <div class="bg-purple-50 rounded-xl p-6 text-center">
+                <div class="text-4xl mb-3">📊</div>
+                <h3 class="font-bold text-gray-800 mb-1">Sleduj pokrok</h3>
+                <p class="text-sm text-gray-500">Detailní statistiky tvých výsledků</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

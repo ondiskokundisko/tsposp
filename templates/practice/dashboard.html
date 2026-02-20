@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Procvičování – Dashboard{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold mb-1">Dobrý den, {{ user.username }}!</h1>
+        <p class="text-blue-200">Vyberte si dimenzi a začněte procvičovat.</p>
+    </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <!-- Dimensions -->
+    <h2 class="text-xl font-bold text-gray-800 mb-6">Procvičovat podle dimenze</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        {% for dim in dimensions %}
+        {% with colors_border="border-blue-200" colors_icon="text-blue-600" colors_btn="bg-blue-600 hover:bg-blue-700" %}
+        <div class="bg-white rounded-2xl shadow-md p-6 card-hover border border-gray-100 animate-slide">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <span class="text-xs font-bold px-2 py-1 rounded-full
+                        {% if dim.code == 'NAM' %}bg-blue-100 text-blue-700
+                        {% elif dim.code == 'UAJ' %}bg-green-100 text-green-700
+                        {% else %}bg-purple-100 text-purple-700{% endif %}">
+                        {{ dim.code }}
+                    </span>
+                    <h3 class="text-lg font-bold text-gray-800 mt-2">{{ dim.name }}</h3>
+                </div>
+                <span class="text-2xl">
+                    {% if dim.code == 'NAM' %}🔢{% elif dim.code == 'UAJ' %}🌍{% else %}🧠{% endif %}
+                </span>
+            </div>
+            <div class="text-sm text-gray-500 mb-4">
+                <span>{{ dim.count }} otázek</span>
+                <span class="mx-2">·</span>
+                <span>{{ dim.time }} min</span>
+            </div>
+            {% if dim.best %}
+            <div class="bg-gray-50 rounded-xl px-3 py-2 text-sm text-gray-600 mb-4">
+                Nejlepší výsledek: <strong>{{ dim.best.score }}/{{ dim.best.total_questions }}</strong>
+            </div>
+            {% endif %}
+            <a href="{% url 'practice:practice_dimension' dim.code %}"
+               class="block text-center py-2.5 rounded-xl font-semibold text-white transition
+               {% if dim.code == 'NAM' %}bg-blue-600 hover:bg-blue-700
+               {% elif dim.code == 'UAJ' %}bg-green-600 hover:bg-green-700
+               {% else %}bg-purple-600 hover:bg-purple-700{% endif %}">
+                Procvičovat →
+            </a>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+
+    <!-- Practice tests -->
+    {% if practice_tests %}
+    <h2 class="text-xl font-bold text-gray-800 mb-6">Zkušební testy</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        {% for test in practice_tests %}
+        <div class="bg-white rounded-2xl shadow-md p-6 card-hover border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">{{ test.name }}</h3>
+            {% if test.description %}
+            <p class="text-sm text-gray-500 mb-3">{{ test.description }}</p>
+            {% endif %}
+            <div class="text-sm text-gray-400 mb-4">
+                {{ test.questions.count }} otázek · {{ test.time_limit_minutes }} min
+            </div>
+            <a href="{% url 'practice:take_test' test.id %}" class="block text-center py-2.5 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition">
+                Spustit test →
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Recent attempts -->
+    {% if recent_attempts %}
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Poslední pokusy</h2>
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-100">
+                <tr>
+                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Test</th>
+                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Datum</th>
+                    <th class="text-right px-6 py-3 font-semibold text-gray-600">Výsledek</th>
+                    <th class="text-right px-6 py-3 font-semibold text-gray-600"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for attempt in recent_attempts %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-3 text-gray-800">
+                        {% if attempt.test %}{{ attempt.test.name }}{% elif attempt.dimension %}{{ attempt.dimension }}{% else %}Procvičování{% endif %}
+                    </td>
+                    <td class="px-6 py-3 text-gray-500">{{ attempt.started_at|date:"d.m.Y H:i" }}</td>
+                    <td class="px-6 py-3 text-right font-semibold {% if attempt.percentage >= 60 %}text-green-600{% else %}text-red-500{% endif %}">
+                        {{ attempt.percentage }}%
+                    </td>
+                    <td class="px-6 py-3 text-right">
+                        <a href="{% url 'practice:results' attempt.id %}" class="text-blue-600 hover:underline text-xs">Detail</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-3 text-right">
+        <a href="{% url 'practice:my_results' %}" class="text-blue-600 text-sm hover:underline">Všechny výsledky →</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

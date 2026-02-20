@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Kontakt{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-16 text-center">
+    <div class="max-w-3xl mx-auto px-4 animate-fade">
+        <h1 class="text-4xl font-extrabold mb-4">Kontakt</h1>
+        <p class="text-blue-200 text-lg">Máte dotaz? Napište nám.</p>
+    </div>
+</section>
+<section class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="bg-white rounded-2xl shadow-md p-10 animate-slide">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Napište nám</h2>
+        <form class="space-y-5" onsubmit="return false;">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Jméno</label>
+                <input type="text" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Vaše jméno">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                <input type="email" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="vas@email.cz">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Zpráva</label>
+                <textarea rows="5" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Váš dotaz nebo zpráva..."></textarea>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition">
+                Odeslat zprávu
+            </button>
+        </form>
+        <div class="mt-8 pt-6 border-t border-gray-100 text-sm text-gray-500 space-y-2">
+            <p>📧 <a href="mailto:info@tsposp.cz" class="text-blue-600 hover:underline">info@tsposp.cz</a></p>
+            <p>🌍 Brno, Česká republika</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

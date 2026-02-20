@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}{{ dimension_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .answer-btn { transition: all 0.15s ease; }
+    .answer-btn.correct { background: #dcfce7; border-color: #16a34a; color: #15803d; }
+    .answer-btn.wrong { background: #fee2e2; border-color: #dc2626; color: #b91c1c; }
+    .answer-btn.selected { border-color: #2563eb; background: #eff6ff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold">{{ dimension_name }}</h1>
+            <p class="text-blue-200 text-sm mt-1">{{ question_count }} otázek · {{ time_minutes }} minut</p>
+        </div>
+        <a href="{% url 'practice:dashboard' %}" class="text-blue-200 hover:text-white text-sm">← Zpět</a>
+    </div>
+</section>
+
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <!-- Flashcard practice -->
+    <div id="practice-card" class="bg-white rounded-2xl shadow-md p-8 animate-fade">
+        <div class="flex items-center justify-between mb-6">
+            <span class="text-sm font-medium text-gray-500">Otázka <span id="q-num">1</span></span>
+            <span id="score-display" class="text-sm font-semibold text-blue-700">Skóre: 0/0</span>
+        </div>
+
+        <div id="question-text" class="text-gray-800 text-lg font-medium mb-6 min-h-[80px]">
+            Načítám otázku...
+        </div>
+
+        <div id="answers" class="space-y-3 mb-6"></div>
+
+        <div id="explanation-box" class="hidden bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 text-sm text-blue-800 mb-6"></div>
+
+        <div class="flex justify-between items-center">
+            <button id="next-btn" class="hidden bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition">
+                Další otázka →
+            </button>
+            <a href="{% url 'practice:dashboard' %}" class="text-gray-400 text-sm hover:text-gray-600">Ukončit</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dimension = "{{ dimension }}";
+let currentQuestion = null;
+let score = 0;
+let total = 0;
+let answered = false;
+
+async function loadQuestion() {
+    answered = false;
+    document.getElementById('explanation-box').classList.add('hidden');
+    document.getElementById('next-btn').classList.add('hidden');
+    document.getElementById('question-text').textContent = 'Načítám...';
+    document.getElementById('answers').innerHTML = '';
+
+    const resp = await fetch(`/procvicovani/procvicovat/${dimension}/otazka/`);
+    if (!resp.ok) { document.getElementById('question-text').textContent = 'Nepodařilo se načíst otázku.'; return; }
+    currentQuestion = await resp.json();
+
+    document.getElementById('question-text').textContent = currentQuestion.text;
+    document.getElementById('q-num').textContent = total + 1;
+
+    const answersDiv = document.getElementById('answers');
+    currentQuestion.answers.forEach(a => {
+        const btn = document.createElement('button');
+        btn.className = 'answer-btn w-full text-left px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50';
+        btn.textContent = a.text;
+        btn.dataset.id = a.id;
+        btn.addEventListener('click', () => selectAnswer(a.id, btn));
+        answersDiv.appendChild(btn);
+    });
+}
+
+async function selectAnswer(answerId, btn) {
+    if (answered) return;
+    answered = true;
+    total++;
+
+    const resp = await fetch(`/procvicovani/procvicovat/${dimension}/odpoved/`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+        body: JSON.stringify({question_id: currentQuestion.id, answer_id: answerId})
+    });
+    const result = await resp.json();
+
+    document.querySelectorAll('.answer-btn').forEach(b => {
+        b.disabled = true;
+        if (parseInt(b.dataset.id) === result.correct_answer_id) b.classList.add('correct');
+    });
+
+    if (result.is_correct) {
+        btn.classList.add('correct');
+        score++;
+    } else {
+        btn.classList.add('wrong');
+    }
+
+    document.getElementById('score-display').textContent = `Skóre: ${score}/${total}`;
+
+    if (result.explanation) {
+        const box = document.getElementById('explanation-box');
+        box.textContent = result.explanation;
+        box.classList.remove('hidden');
+    }
+    document.getElementById('next-btn').classList.remove('hidden');
+}
+
+document.getElementById('next-btn').addEventListener('click', loadQuestion);
+
+function getCookie(name) {
+    let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? v[2] : null;
+}
+
+loadQuestion();
+</script>
+{% endblock %}

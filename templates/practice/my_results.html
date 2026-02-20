@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Moje výsledky{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-12">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold mb-1">Moje výsledky</h1>
+        <p class="text-blue-200">Přehled všech vašich pokusů.</p>
+    </div>
+</section>
+
+<section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    {% if attempts %}
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden animate-fade">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-100">
+                <tr>
+                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Test / Dimenze</th>
+                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Typ</th>
+                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Datum</th>
+                    <th class="text-right px-6 py-3 font-semibold text-gray-600">Skóre</th>
+                    <th class="text-right px-6 py-3 font-semibold text-gray-600">%</th>
+                    <th class="text-right px-6 py-3 font-semibold text-gray-600"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for attempt in attempts %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-3 text-gray-800 font-medium">
+                        {% if attempt.test %}{{ attempt.test.name }}{% elif attempt.dimension %}{{ attempt.dimension }}{% else %}Procvičování{% endif %}
+                    </td>
+                    <td class="px-6 py-3">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold
+                            {% if attempt.attempt_type == 'test' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-600{% endif %}">
+                            {{ attempt.get_attempt_type_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-3 text-gray-500">{{ attempt.started_at|date:"d.m.Y H:i" }}</td>
+                    <td class="px-6 py-3 text-right text-gray-700">{{ attempt.score }}/{{ attempt.total_questions }}</td>
+                    <td class="px-6 py-3 text-right font-bold {% if attempt.percentage >= 60 %}text-green-600{% else %}text-red-500{% endif %}">
+                        {{ attempt.percentage }}%
+                    </td>
+                    <td class="px-6 py-3 text-right">
+                        <a href="{% url 'practice:results' attempt.id %}" class="text-blue-600 hover:underline text-xs">Detail</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl shadow-md p-12 text-center text-gray-400 animate-fade">
+        <div class="text-5xl mb-4">📊</div>
+        <p class="text-lg font-medium">Zatím žádné výsledky.</p>
+        <a href="{% url 'practice:dashboard' %}" class="mt-4 inline-block text-blue-600 hover:underline">Začít procvičovat →</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

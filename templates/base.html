@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TSP Příprava{% endblock %} – TSPosp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { DEFAULT: '#1e3a8a', light: '#3b82f6', dark: '#1e2e6b' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.5s ease forwards; }
+        .animate-slide { animation: slideUp 0.6s ease forwards; }
+        .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(30,58,138,0.15); }
+        .gradient-bg { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%); }
+        .nav-link { transition: color 0.2s ease; }
+        .nav-link:hover { color: #93c5fd; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+<!-- Navbar -->
+<nav class="gradient-bg shadow-xl sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <a href="{% url 'core:home' %}" class="flex items-center space-x-3">
+                    <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow">
+                        <span class="text-blue-700 font-extrabold text-sm">TSP</span>
+                    </div>
+                    <span class="text-white font-bold text-xl tracking-tight">TSPosp</span>
+                </a>
+            </div>
+            <div class="hidden md:flex items-center space-x-6 text-sm font-medium text-blue-100">
+                <a href="{% url 'core:home' %}" class="nav-link hover:text-white">Domů</a>
+                <a href="{% url 'core:about' %}" class="nav-link hover:text-white">O nás</a>
+                <a href="{% url 'core:pricing' %}" class="nav-link hover:text-white">Ceny</a>
+                <a href="{% url 'core:contact' %}" class="nav-link hover:text-white">Kontakt</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'practice:dashboard' %}" class="nav-link hover:text-white">Procvičování</a>
+                    <a href="{% url 'accounts:profile' %}" class="nav-link hover:text-white">{{ user.username }}</a>
+                    <a href="{% url 'accounts:logout' %}" class="bg-white text-blue-700 px-4 py-1.5 rounded-full font-semibold hover:bg-blue-50 transition">Odhlásit</a>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="nav-link hover:text-white">Přihlásit</a>
+                    <a href="{% url 'accounts:register' %}" class="bg-white text-blue-700 px-4 py-1.5 rounded-full font-semibold hover:bg-blue-50 transition">Registrovat</a>
+                {% endif %}
+            </div>
+            <!-- Mobile menu button -->
+            <button id="mobile-menu-btn" class="md:hidden text-white focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden md:hidden pb-4 text-sm font-medium text-blue-100 space-y-2">
+            <a href="{% url 'core:home' %}" class="block py-1 hover:text-white">Domů</a>
+            <a href="{% url 'core:about' %}" class="block py-1 hover:text-white">O nás</a>
+            <a href="{% url 'core:pricing' %}" class="block py-1 hover:text-white">Ceny</a>
+            <a href="{% url 'core:contact' %}" class="block py-1 hover:text-white">Kontakt</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'practice:dashboard' %}" class="block py-1 hover:text-white">Procvičování</a>
+                <a href="{% url 'accounts:profile' %}" class="block py-1 hover:text-white">Profil</a>
+                <a href="{% url 'accounts:logout' %}" class="block py-1 hover:text-white">Odhlásit</a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="block py-1 hover:text-white">Přihlásit</a>
+                <a href="{% url 'accounts:register' %}" class="block py-1 hover:text-white">Registrovat</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- Flash messages -->
+{% if messages %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+    {% for message in messages %}
+    <div class="mb-2 px-4 py-3 rounded-lg text-sm font-medium
+        {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200
+        {% elif message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200
+        {% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800 border border-yellow-200
+        {% else %}bg-blue-100 text-blue-800 border border-blue-200{% endif %}
+        flex items-center justify-between animate-fade">
+        <span>{{ message }}</span>
+        <button onclick="this.parentElement.remove()" class="ml-4 opacity-60 hover:opacity-100">✕</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Main content -->
+<main class="flex-1">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer class="gradient-bg text-blue-100 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+                <div class="flex items-center space-x-2 mb-3">
+                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                        <span class="text-blue-700 font-extrabold text-xs">TSP</span>
+                    </div>
+                    <span class="text-white font-bold text-lg">TSPosp</span>
+                </div>
+                <p class="text-sm text-blue-200">Nejlepší příprava na zkoušku TSP pro přijetí na Masarykovu univerzitu.</p>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-3">Navigace</h4>
+                <ul class="space-y-1 text-sm">
+                    <li><a href="{% url 'core:home' %}" class="hover:text-white transition">Domů</a></li>
+                    <li><a href="{% url 'core:about' %}" class="hover:text-white transition">O nás</a></li>
+                    <li><a href="{% url 'core:pricing' %}" class="hover:text-white transition">Ceny</a></li>
+                    <li><a href="{% url 'core:contact' %}" class="hover:text-white transition">Kontakt</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-3">Procvičování</h4>
+                <ul class="space-y-1 text-sm">
+                    <li><a href="{% url 'practice:dashboard' %}" class="hover:text-white transition">Dashboard</a></li>
+                    <li><a href="{% url 'practice:test_list' %}" class="hover:text-white transition">Testy</a></li>
+                    <li><a href="{% url 'practice:my_results' %}" class="hover:text-white transition">Moje výsledky</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="mt-8 border-t border-blue-700 pt-4 text-center text-xs text-blue-300">
+            © {% now "Y" %} TSPosp – Příprava na TSP. Všechna práva vyhrazena.
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.getElementById('mobile-menu-btn').addEventListener('click', function () {
+        document.getElementById('mobile-menu').classList.toggle('hidden');
+    });
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
