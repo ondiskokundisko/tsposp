@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Domů{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="gradient-bg text-white py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-fade">
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
+            Připrav se na <span class="text-yellow-300">TSP</span><br>s jistotou a přehledem
+        </h1>
+        <p class="text-blue-200 text-lg md:text-xl max-w-2xl mx-auto mb-8">
+            Procvičuj všechny tři dimenze testu studijních předpokladů – kdykoliv, kdekoliv.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4">
+            {% if user.is_authenticated %}
+            <a href="{% url 'practice:dashboard' %}" class="bg-white text-blue-700 px-8 py-3 rounded-full font-bold text-lg hover:bg-blue-50 transition shadow-lg">
+                Jít na procvičování →
+            </a>
+            {% else %}
+            <a href="{% url 'accounts:register' %}" class="bg-white text-blue-700 px-8 py-3 rounded-full font-bold text-lg hover:bg-blue-50 transition shadow-lg">
+                Začít zdarma →
+            </a>
+            <a href="{% url 'accounts:login' %}" class="border-2 border-white text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-white hover:text-blue-700 transition">
+                Přihlásit se
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Stats bar -->
+<section class="bg-white border-b border-gray-100 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-3 gap-4 text-center">
+            <div>
+                <div class="text-3xl font-extrabold text-blue-700">{{ stats.question_count }}</div>
+                <div class="text-sm text-gray-500 mt-1">Otázek v databázi</div>
+            </div>
+            <div>
+                <div class="text-3xl font-extrabold text-blue-700">{{ stats.test_count }}</div>
+                <div class="text-sm text-gray-500 mt-1">Zkušebních testů</div>
+            </div>
+            <div>
+                <div class="text-3xl font-extrabold text-blue-700">3</div>
+                <div class="text-sm text-gray-500 mt-1">Dimenze TSP</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Dimension cards -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <h2 class="text-3xl font-bold text-gray-800 text-center mb-10">Co TSP testuje?</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {% for dim in dimensions %}
+        <div class="bg-white rounded-2xl shadow-md p-8 card-hover animate-slide border border-gray-100">
+            <div class="text-5xl mb-4">{{ dim.icon }}</div>
+            <div class="inline-block text-xs font-bold px-3 py-1 rounded-full mb-3
+                {% if dim.color == 'blue' %}bg-blue-100 text-blue-700
+                {% elif dim.color == 'green' %}bg-green-100 text-green-700
+                {% else %}bg-purple-100 text-purple-700{% endif %}">
+                {{ dim.code }}
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">{{ dim.name }}</h3>
+            <p class="text-gray-500 text-sm mb-4">{{ dim.description }}</p>
+            <div class="flex items-center justify-between text-sm text-gray-400 mb-5">
+                <span>{{ dim.count }} otázek</span>
+            </div>
+            {% if user.is_authenticated %}
+            <a href="{% url 'practice:practice_list' dim.code %}"
+               class="block text-center py-2.5 rounded-xl font-semibold transition
+               {% if dim.color == 'blue' %}bg-blue-600 text-white hover:bg-blue-700
+               {% elif dim.color == 'green' %}bg-green-600 text-white hover:bg-green-700
+               {% else %}bg-purple-600 text-white hover:bg-purple-700{% endif %}">
+                Procvičovat →
+            </a>
+            {% else %}
+            <a href="{% url 'accounts:register' %}"
+               class="block text-center py-2.5 rounded-xl font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">
+                Registrovat se →
+            </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- CTA -->
+{% if not user.is_authenticated %}
+<section class="gradient-bg text-white py-16">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-3xl font-bold mb-4">Připrav se chytře. Přijmi se jistě.</h2>
+        <p class="text-blue-200 mb-8">Registrace je zdarma. Začni procvičovat ještě dnes.</p>
+        <a href="{% url 'accounts:register' %}" class="bg-white text-blue-700 px-10 py-3 rounded-full font-bold text-lg hover:bg-blue-50 transition shadow-lg">
+            Zaregistrovat se zdarma
+        </a>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

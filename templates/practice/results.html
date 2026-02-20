@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Výsledky{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="text-6xl mb-4">{% if attempt.percentage >= 60 %}🎉{% else %}📝{% endif %}</div>
+        <h1 class="text-3xl font-bold mb-1">
+            {% if attempt.percentage >= 60 %}Skvělý výsledek!{% else %}Dobrý pokus!{% endif %}
+        </h1>
+        <p class="text-blue-200 text-sm">{{ attempt.get_dimension_display }} · {{ attempt.started_at|date:"d.m.Y H:i" }}</p>
+    </div>
+</section>
+
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="bg-white rounded-2xl shadow-md p-8 mb-8 text-center animate-fade">
+        <div class="text-5xl font-extrabold text-blue-700 mb-0.5">{{ attempt.score|floatformat:2 }}</div>
+        <div class="text-base text-gray-400 mb-1">bodů z {{ attempt.total_questions }}</div>
+        <div class="text-2xl font-bold mb-4
+            {% if attempt.percentage >= 60 %}text-green-600{% elif attempt.percentage >= 0 %}text-blue-600{% else %}text-red-500{% endif %}">
+            {{ attempt.percentage }}%
+        </div>
+        <!-- Scoring legend -->
+        <div class="flex flex-wrap justify-center gap-4 text-xs text-gray-500 mb-4">
+            <span class="flex items-center gap-1.5"><span class="bg-green-100 text-green-700 font-bold px-1.5 py-0.5 rounded-full">+1</span> správná odpověď</span>
+            <span class="flex items-center gap-1.5"><span class="bg-red-100 text-red-600 font-bold px-1.5 py-0.5 rounded-full">−0,2</span> špatná odpověď</span>
+            <span class="flex items-center gap-1.5"><span class="bg-gray-100 text-gray-500 font-bold px-1.5 py-0.5 rounded-full">0</span> nezodpovězeno</span>
+        </div>
+        <div class="w-full bg-gray-100 rounded-full h-4 mb-1 overflow-hidden">
+            <div class="h-4 rounded-full transition-all duration-1000
+                {% if attempt.percentage >= 80 %}bg-green-500
+                {% elif attempt.percentage >= 60 %}bg-blue-500
+                {% elif attempt.percentage >= 40 %}bg-yellow-500
+                {% else %}bg-red-500{% endif %}"
+                style="width: {{ attempt.percentage_clamped }}%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-gray-400 mb-5 px-1">
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-red-500 h-2" style="width:8px"></span>&lt;40%</span>
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-yellow-500 h-2" style="width:8px"></span>≥40%</span>
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-blue-500 h-2" style="width:8px"></span>≥60%</span>
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-green-500 h-2" style="width:8px"></span>≥80%</span>
+        </div>
+        {% if attempt.percentage < 0 %}
+        <div class="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 mb-5 text-left">
+            ⚠️ Záporné skóre – penalizace za špatné odpovědi převýšila body za správné. V TSP platí: −0,2 bodu za každou špatnou odpověď.
+        </div>
+        {% endif %}
+        <div class="flex justify-center gap-4 flex-wrap">
+            <a href="{% url 'practice:dashboard' %}" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition">Dashboard</a>
+            <a href="{% url 'practice:my_results' %}" class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-gray-200 transition">Moje výsledky</a>
+        </div>
+    </div>
+
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Přehled odpovědí</h2>
+    <div class="space-y-4">
+        {% for ua in user_answers %}
+        <div class="bg-white rounded-2xl shadow-sm p-6 border
+            {% if ua.is_correct %}border-green-200{% elif ua.selected_answer %}border-red-200{% else %}border-gray-200{% endif %}">
+            <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="flex items-start gap-3 flex-1">
+                    <span class="text-xl flex-shrink-0">
+                        {% if ua.is_correct %}✅{% elif ua.selected_answer %}❌{% else %}○{% endif %}
+                    </span>
+                    <p class="text-gray-800 font-medium">{{ ua.question.text }}</p>
+                </div>
+                <!-- Per-question points badge -->
+                <span class="flex-shrink-0 text-sm font-bold px-2 py-0.5 rounded-full
+                    {% if ua.is_correct %}bg-green-100 text-green-700
+                    {% elif ua.selected_answer %}bg-red-100 text-red-600
+                    {% else %}bg-gray-100 text-gray-500{% endif %}">
+                    {% if ua.is_correct %}+1{% elif ua.selected_answer %}−0,2{% else %}0{% endif %}
+                </span>
+            </div>
+            <div class="ml-8 space-y-1">
+                {% for answer in ua.question.answers.all %}
+                <div class="text-sm px-3 py-1.5 rounded-lg
+                    {% if answer.is_correct %}bg-green-50 text-green-700 font-semibold
+                    {% elif ua.selected_answer and ua.selected_answer.id == answer.id and not answer.is_correct %}bg-red-50 text-red-600
+                    {% else %}text-gray-600{% endif %}">
+                    {% if answer.is_correct %}✓ {% elif ua.selected_answer and ua.selected_answer.id == answer.id %}✗ {% endif %}{{ answer.text }}
+                </div>
+                {% endfor %}
+            </div>
+            {% if not ua.selected_answer %}
+            <p class="ml-8 mt-2 text-xs text-gray-400 italic">Otázka nebyla zodpovězena (0 bodů)</p>
+            {% endif %}
+            {% if ua.question.explanation %}
+            <div class="ml-8 mt-3 text-sm text-blue-700 bg-blue-50 rounded-xl px-4 py-2 border border-blue-100">
+                💡 {{ ua.question.explanation }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

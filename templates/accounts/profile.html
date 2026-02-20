@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Profil{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-12">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-6">
+            <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow text-blue-700 font-extrabold text-2xl">
+                {{ user.username|first|upper }}
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold">{{ user.username }}</h1>
+                <p class="text-blue-200">{{ user.email }}</p>
+                {% if profile.is_premium %}
+                <span class="inline-block mt-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">⭐ Premium</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div class="bg-white rounded-2xl shadow-md p-6 text-center card-hover">
+            <div class="text-4xl font-extrabold text-blue-700">{{ total_attempts }}</div>
+            <div class="text-gray-500 text-sm mt-1">Celkem pokusů</div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-md p-6 text-center card-hover">
+            <div class="text-4xl font-extrabold text-green-600">{{ avg_score }}</div>
+            <div class="text-gray-500 text-sm mt-1">Průměrné skóre</div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-md p-6 text-center card-hover">
+            <div class="text-4xl font-extrabold text-purple-600">
+                {% if profile.is_premium %}Premium{% else %}Zdarma{% endif %}
+            </div>
+            <div class="text-gray-500 text-sm mt-1">Typ účtu</div>
+        </div>
+    </div>
+
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Poslední pokusy</h2>
+    {% if attempts %}
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-100">
+                <tr>
+                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Test / Dimenze</th>
+                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Datum</th>
+                    <th class="text-right px-6 py-3 font-semibold text-gray-600">Skóre</th>
+                    <th class="text-right px-6 py-3 font-semibold text-gray-600"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for attempt in attempts %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-3 text-gray-800">
+                        {% if attempt.test %}{{ attempt.test.name }}{% elif attempt.dimension %}{{ attempt.dimension }}{% else %}—{% endif %}
+                    </td>
+                    <td class="px-6 py-3 text-gray-500">{{ attempt.started_at|date:"d.m.Y H:i" }}</td>
+                    <td class="px-6 py-3 text-right">
+                        <span class="font-semibold {% if attempt.percentage >= 60 %}text-green-600{% else %}text-red-500{% endif %}">
+                            {{ attempt.score }}/{{ attempt.total_questions }} ({{ attempt.percentage }}%)
+                        </span>
+                    </td>
+                    <td class="px-6 py-3 text-right">
+                        <a href="{% url 'practice:results' attempt.id %}" class="text-blue-600 hover:underline text-xs">Detail</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl shadow-md p-8 text-center text-gray-400">
+        Zatím žádné pokusy. <a href="{% url 'practice:dashboard' %}" class="text-blue-600 hover:underline">Začněte procvičovat!</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

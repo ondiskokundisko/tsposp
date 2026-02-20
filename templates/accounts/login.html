@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Přihlášení{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4">
+    <div class="w-full max-w-md animate-fade">
+        <div class="text-center mb-8">
+            <div class="w-14 h-14 gradient-bg rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span class="text-white font-extrabold text-lg">TSP</span>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">Přihlášení</h1>
+            <p class="text-gray-500 mt-1">Vítejte zpět!</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-md p-8">
+            <form method="post" class="space-y-5">
+                {% csrf_token %}
+                {% if form.errors %}
+                <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+                    Nesprávné uživatelské jméno nebo heslo.
+                </div>
+                {% endif %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Uživatelské jméno</label>
+                    <input name="username" type="text" required autocomplete="username"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        placeholder="Vaše uživatelské jméno">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Heslo</label>
+                    <input name="password" type="password" required autocomplete="current-password"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        placeholder="Vaše heslo">
+                </div>
+                <button type="submit" class="w-full gradient-bg text-white py-3 rounded-xl font-semibold hover:opacity-90 transition shadow">
+                    Přihlásit se
+                </button>
+            </form>
+            <p class="text-center text-sm text-gray-500 mt-6">
+                Nemáte účet? <a href="{% url 'accounts:register' %}" class="text-blue-600 font-medium hover:underline">Registrujte se</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

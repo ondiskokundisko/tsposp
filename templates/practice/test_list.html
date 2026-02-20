@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Dostupné testy{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-12">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold mb-1">Zkušební testy</h1>
+        <p class="text-blue-200">Vyzkoušejte si plnohodnotný test v reálném čase.</p>
+    </div>
+</section>
+
+<section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    {% if tests %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% for test in tests %}
+        <div class="bg-white rounded-2xl shadow-md p-6 card-hover border border-gray-100 animate-slide">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">{{ test.name }}</h2>
+            {% if test.description %}
+            <p class="text-gray-500 text-sm mb-4">{{ test.description }}</p>
+            {% endif %}
+            <div class="flex items-center gap-4 text-sm text-gray-400 mb-5">
+                <span>📋 {{ test.questions.count }} otázek</span>
+                <span>⏱ {{ test.time_limit_minutes }} minut</span>
+            </div>
+            <a href="{% url 'practice:take_test' test.id %}" class="block text-center py-2.5 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition">
+                Spustit test →
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl shadow-md p-12 text-center text-gray-400 animate-fade">
+        <div class="text-5xl mb-4">📭</div>
+        <p class="text-lg font-medium">Zatím nejsou dostupné žádné testy.</p>
+        <a href="{% url 'practice:dashboard' %}" class="mt-4 inline-block text-blue-600 hover:underline">← Zpět na dashboard</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

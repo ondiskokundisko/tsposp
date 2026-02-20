@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Výsledky testu – TSPosp{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-16">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center animate-fade">
+        <div class="text-6xl mb-4">{% if overall_pct >= 60 %}🎉{% else %}📝{% endif %}</div>
+        <h1 class="text-4xl font-extrabold mb-2">Test dokončen!</h1>
+        <p class="text-blue-200">Celkové skóre ze všech tří dimenzí</p>
+    </div>
+</section>
+
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <!-- Overall score -->
+    <div class="bg-white rounded-2xl shadow-md p-8 mb-8 text-center animate-fade">
+        <div class="text-6xl font-extrabold text-blue-700 mb-1">{{ total_score|floatformat:2 }}</div>
+        <div class="text-lg text-gray-400 mb-1">bodů z {{ total_questions }}</div>
+        <div class="text-2xl font-bold {% if overall_pct >= 60 %}text-green-600{% elif overall_pct >= 0 %}text-blue-600{% else %}text-red-500{% endif %} mb-5">
+            {{ overall_pct }}%
+        </div>
+        <!-- Scoring legend -->
+        <div class="flex flex-wrap justify-center gap-4 text-xs text-gray-500 mb-4">
+            <span class="flex items-center gap-1.5"><span class="bg-green-100 text-green-700 font-bold px-1.5 py-0.5 rounded-full">+1</span> správná odpověď</span>
+            <span class="flex items-center gap-1.5"><span class="bg-red-100 text-red-600 font-bold px-1.5 py-0.5 rounded-full">−0,2</span> špatná odpověď</span>
+            <span class="flex items-center gap-1.5"><span class="bg-gray-100 text-gray-500 font-bold px-1.5 py-0.5 rounded-full">0</span> nezodpovězeno</span>
+        </div>
+        <div class="w-full bg-gray-100 rounded-full h-4 mb-1 overflow-hidden">
+            <div class="h-4 rounded-full transition-all duration-1000
+                {% if overall_pct >= 80 %}bg-green-500
+                {% elif overall_pct >= 60 %}bg-blue-500
+                {% elif overall_pct >= 40 %}bg-yellow-500
+                {% else %}bg-red-500{% endif %}"
+                style="width: {% if overall_pct > 0 %}{{ overall_pct|floatformat:0 }}{% else %}0{% endif %}%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-gray-400 mb-5 px-1">
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-red-500 h-2" style="width:8px"></span>&lt;40%</span>
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-yellow-500 h-2" style="width:8px"></span>≥40%</span>
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-blue-500 h-2" style="width:8px"></span>≥60%</span>
+            <span class="flex items-center gap-1"><span class="inline-block rounded-full bg-green-500 h-2" style="width:8px"></span>≥80%</span>
+        </div>
+        {% if overall_pct < 0 %}
+        <div class="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 mb-5 text-left">
+            ⚠️ Záporné skóre – penalizace za špatné odpovědi převýšila body za správné. V TSP platí: −0,2 bodu za každou špatnou odpověď.
+        </div>
+        {% endif %}
+        <div class="flex flex-wrap justify-center gap-4">
+            <a href="{% url 'practice:start_random_test' %}"
+               class="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition">
+                🎲 Nový náhodný test
+            </a>
+            <a href="{% url 'practice:dashboard' %}"
+               class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-gray-200 transition">
+                Dashboard
+            </a>
+            <a href="{% url 'practice:my_results' %}"
+               class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-gray-200 transition">
+                Moje výsledky
+            </a>
+        </div>
+    </div>
+
+    <!-- Per-dimension breakdown -->
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Výsledky podle dimenzí</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {% for attempt in attempts %}
+        <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 text-center">
+            <div class="text-sm font-bold px-2 py-0.5 rounded-full inline-block mb-3
+                {% if attempt.dimension == 'NAM' %}bg-blue-100 text-blue-700
+                {% elif attempt.dimension == 'UAJ' %}bg-green-100 text-green-700
+                {% else %}bg-purple-100 text-purple-700{% endif %}">
+                {{ attempt.dimension }}
+            </div>
+            <div class="text-3xl font-extrabold text-gray-800 mb-0.5">{{ attempt.score|floatformat:2 }}</div>
+            <div class="text-xs text-gray-400 mb-1">bodů z {{ attempt.total_questions }}</div>
+            <div class="text-sm font-bold mb-3
+                {% if attempt.percentage >= 60 %}text-green-600{% elif attempt.percentage >= 0 %}text-blue-600{% else %}text-red-500{% endif %}">
+                {{ attempt.percentage }}%
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div class="h-2 rounded-full
+                    {% if attempt.dimension == 'NAM' %}bg-blue-500
+                    {% elif attempt.dimension == 'UAJ' %}bg-green-500
+                    {% else %}bg-purple-500{% endif %}"
+                    style="width: {{ attempt.percentage_clamped }}%"></div>
+            </div>
+            <div class="mt-3">
+                <a href="{% url 'practice:results' attempt.id %}" class="text-xs text-blue-600 hover:underline">
+                    Zobrazit odpovědi →
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

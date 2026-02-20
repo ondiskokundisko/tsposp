@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}{{ test.name }}{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold">{{ test.name }}</h1>
+            <p class="text-blue-200 text-sm mt-1">{{ questions|length }} otázek · {{ test.time_limit_minutes }} minut</p>
+        </div>
+        <div class="text-right">
+            <div class="text-2xl font-mono font-bold" id="timer">--:--</div>
+            <div class="text-blue-200 text-xs">Zbývající čas</div>
+        </div>
+    </div>
+</section>
+
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <form method="post" action="{% url 'practice:submit_test' test.id %}" id="test-form">
+        {% csrf_token %}
+        {% for question in questions %}
+        <div class="bg-white rounded-2xl shadow-md p-8 mb-6 animate-fade">
+            <div class="flex items-start gap-4 mb-5">
+                <span class="bg-blue-100 text-blue-700 font-bold text-sm px-3 py-1 rounded-full flex-shrink-0">{{ forloop.counter }}</span>
+                <p class="text-gray-800 font-medium">{{ question.text }}</p>
+            </div>
+            {% if question.image %}
+            <img src="{{ question.image.url }}" alt="" class="rounded-xl max-h-64 mb-5 object-contain">
+            {% endif %}
+            <div class="space-y-3 ml-10">
+                {% for answer in question.answers.all %}
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="radio" name="question_{{ question.id }}" value="{{ answer.id }}"
+                        class="w-4 h-4 accent-blue-600">
+                    <span class="text-sm text-gray-700 group-hover:text-blue-700 transition">{{ answer.text }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="flex justify-between items-center">
+            <a href="{% url 'practice:test_list' %}" class="text-gray-400 hover:text-gray-600 text-sm">← Zpět na testy</a>
+            <button type="submit" onclick="return confirm('Opravdu chcete odeslat test?')"
+                class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow">
+                Odeslat test
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let timeLeft = {{ time_limit }};
+const timerEl = document.getElementById('timer');
+
+function updateTimer() {
+    if (timeLeft <= 0) {
+        timerEl.textContent = '00:00';
+        timerEl.classList.add('text-red-300');
+        document.getElementById('test-form').submit();
+        return;
+    }
+    const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    const s = (timeLeft % 60).toString().padStart(2, '0');
+    timerEl.textContent = `${m}:${s}`;
+    if (timeLeft <= 60) timerEl.classList.add('text-red-300');
+    timeLeft--;
+    setTimeout(updateTimer, 1000);
+}
+updateTimer();
+</script>
+{% endblock %}

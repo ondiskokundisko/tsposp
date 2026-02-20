@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Procvičování – Dashboard{% endblock %}
+
+{% block content %}
+<section class="gradient-bg text-white py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold mb-1">Dobrý den, {{ user.username }}!</h1>
+        <p class="text-blue-200">
+            {% if premium %}Máte přístup ke všem otázkám a testům.{% else %}Bezplatný přístup – prvních {{ 10 }} otázek v každé dimenzi.{% endif %}
+        </p>
+    </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    <!-- Dimensions -->
+    <h2 class="text-xl font-bold text-gray-800 mb-6">Procvičovat podle dimenze</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {% for dim in dimensions %}
+        <div class="bg-white rounded-2xl shadow-md p-6 card-hover border border-gray-100 animate-slide">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <span class="text-xs font-bold px-2 py-1 rounded-full
+                        {% if dim.code == 'NAM' %}bg-blue-100 text-blue-700
+                        {% elif dim.code == 'UAJ' %}bg-green-100 text-green-700
+                        {% else %}bg-purple-100 text-purple-700{% endif %}">
+                        {{ dim.code }}
+                    </span>
+                    <h3 class="text-lg font-bold text-gray-800 mt-2">{{ dim.name }}</h3>
+                </div>
+                <span class="text-2xl">
+                    {% if dim.code == 'NAM' %}🔢{% elif dim.code == 'UAJ' %}🌍{% else %}🧠{% endif %}
+                </span>
+            </div>
+            <div class="text-sm text-gray-500 mb-3">
+                {{ dim.accessible }} otázek přístupných
+                {% if not premium and dim.total > 10 %}<span class="text-gray-400">(z {{ dim.total }})</span>{% endif %}
+                · {{ dim.time }} min
+            </div>
+        {% if accessible_count > 0 %}
+            <div class="mb-3">
+                <div class="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Dokončeno</span>
+                    <span>{{ dim.completed }}/{{ dim.accessible }}</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2">
+                    <div class="h-2 rounded-full {% if dim.code == 'NAM' %}bg-blue-500{% elif dim.code == 'UAJ' %}bg-green-500{% else %}bg-purple-500{% endif %}"
+                         style="width: {% widthratio dim.completed dim.accessible 100 %}%; transition: width 0.8s ease;"></div>
+                </div>
+            </div>
+            {% endif %}
+            {% if dim.best %}
+            <div class="bg-gray-50 rounded-xl px-3 py-2 text-xs text-gray-500 mb-4">
+                Nejlepší test: <strong class="text-gray-700">{{ dim.best.score|floatformat:2 }}/{{ dim.best.total_questions }}</strong> ({{ dim.best.percentage }}%)
+            </div>
+            {% endif %}
+            <a href="{% url 'practice:practice_list' dim.code %}"
+               class="block text-center py-2.5 rounded-xl font-semibold text-white transition
+               {% if dim.code == 'NAM' %}bg-blue-600 hover:bg-blue-700
+               {% elif dim.code == 'UAJ' %}bg-green-600 hover:bg-green-700
+               {% else %}bg-purple-600 hover:bg-purple-700{% endif %}">
+                Procvičovat →
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Random Test CTA -->
+    <div class="rounded-2xl mb-10 overflow-hidden shadow-md animate-fade">
+        {% if premium %}
+        <div class="gradient-bg p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="text-white">
+                <h2 class="text-2xl font-bold mb-1">🎲 Náhodný testový test</h2>
+                <p class="text-blue-200 text-sm">15 náhodně vybraných otázek z každé dimenze · celkem 45+20+45 minut</p>
+                <p class="text-blue-300 text-xs mt-1">Otázky jsou vybrány náhodně z databáze – jako v reálném TSP.</p>
+            </div>
+            <a href="{% url 'practice:start_random_test' %}"
+               class="flex-shrink-0 bg-white text-blue-700 px-8 py-3 rounded-full font-bold hover:bg-blue-50 transition shadow-lg whitespace-nowrap">
+                Spustit test →
+            </a>
+        </div>
+        {% else %}
+        <div class="bg-gradient-to-br from-gray-100 to-gray-200 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-700 mb-1">🔒 Náhodný testový test</h2>
+                <p class="text-gray-500 text-sm">Dostupné pouze pro prémiové uživatele. Odemkněte plný přístup.</p>
+            </div>
+            <a href="{% url 'core:pricing' %}"
+               class="flex-shrink-0 bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition shadow whitespace-nowrap">
+                Získat přístup →
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent test sessions -->
+    {% if recent_sessions %}
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Poslední výsledky</h2>
+    <div class="space-y-3 mb-4">
+        {% for session in recent_sessions %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-md transition">
+            <!-- Date + score -->
+            <div class="flex items-center gap-4">
+                <div class="text-2xl">{% if session.is_complete %}🎯{% else %}📋{% endif %}</div>
+                <div>
+                    <div class="text-xs text-gray-400">{{ session.date|date:"d.m.Y H:i" }}</div>
+                    <div class="font-extrabold text-base
+                        {% if session.percentage >= 60 %}text-green-600
+                        {% elif session.percentage >= 0 %}text-blue-700
+                        {% else %}text-red-500{% endif %}">
+                        {{ session.total_score|floatformat:2 }} bodů
+                        <span class="text-xs font-normal text-gray-400">z {{ session.total_questions }} ({{ session.percentage }}%)</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Dimension pills -->
+            <div class="flex flex-wrap gap-2">
+                {% for attempt in session.attempts %}
+                <div class="text-xs text-center px-2.5 py-1.5 rounded-lg border
+                    {% if attempt.dimension == 'NAM' %}border-blue-200 bg-blue-50 text-blue-700
+                    {% elif attempt.dimension == 'UAJ' %}border-green-200 bg-green-50 text-green-700
+                    {% else %}border-purple-200 bg-purple-50 text-purple-700{% endif %}">
+                    <span class="font-bold">{{ attempt.dimension }}</span>
+                    <span class="ml-1 text-gray-500">{{ attempt.score|floatformat:2 }}/{{ attempt.total_questions }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <!-- Detail link -->
+            <div class="flex-shrink-0">
+                {% if session.is_complete %}
+                <a href="{% url 'practice:test_session_detail' session.session_key %}"
+                   class="text-blue-600 text-sm font-semibold hover:underline whitespace-nowrap">
+                    Více informací →
+                </a>
+                {% else %}
+                    {% for attempt in session.attempts %}
+                    <a href="{% url 'practice:results' attempt.id %}" class="text-blue-600 text-xs font-semibold hover:underline block">
+                        {{ attempt.dimension }} detail →
+                    </a>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="text-right">
+        <a href="{% url 'practice:my_results' %}" class="text-blue-600 text-sm hover:underline">Všechny výsledky →</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+

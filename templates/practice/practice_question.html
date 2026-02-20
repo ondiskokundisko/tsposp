@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Otázka {{ number }} – {{ dimension_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .answer-opt { transition: all 0.15s ease; cursor: pointer; }
+    .answer-opt:hover { border-color: #3b82f6; background: #eff6ff; }
+    .answer-opt.correct { background: #dcfce7; border-color: #16a34a; color: #15803d; }
+    .answer-opt.wrong   { background: #fee2e2; border-color: #dc2626; color: #b91c1c; }
+    .answer-opt.disabled { cursor: default; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header bar -->
+<section class="gradient-bg text-white py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div>
+            <span class="text-xs font-bold px-2 py-1 rounded-full bg-white bg-opacity-20 text-blue-100">
+                {{ dimension_name }}
+            </span>
+            <h1 class="text-xl font-bold mt-2">Otázka {{ number }} / {{ total }}</h1>
+        </div>
+        <a href="{% url 'practice:practice_list' dimension %}" class="text-blue-200 hover:text-white text-sm">← Seznam</a>
+    </div>
+    <!-- Progress bar -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div class="w-full bg-white bg-opacity-20 rounded-full h-1.5">
+            <div class="h-1.5 bg-white rounded-full" style="width: {% widthratio number total 100 %}%;"></div>
+        </div>
+    </div>
+</section>
+
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-2xl shadow-md p-8 animate-fade">
+
+        <!-- Completion toggle -->
+        <div class="flex items-center justify-between mb-6">
+            <span class="text-xs text-gray-400 font-medium uppercase tracking-wide">Procvičování</span>
+            <button id="complete-btn"
+                    data-question-id="{{ question.id }}"
+                    data-completed="{{ is_completed|yesno:'true,false' }}"
+                    class="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border transition
+                        {% if is_completed %}bg-green-50 border-green-300 text-green-700 hover:bg-green-100
+                        {% else %}bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100{% endif %}">
+                <span id="complete-icon">{% if is_completed %}✓{% else %}○{% endif %}</span>
+                <span id="complete-label">{% if is_completed %}Dokončeno{% else %}Označit jako dokončeno{% endif %}</span>
+            </button>
+        </div>
+
+        <!-- Question text -->
+        <div class="text-gray-800 text-lg font-medium mb-2 leading-relaxed">{{ question.text }}</div>
+        {% if question.image %}
+        <img src="{{ question.image.url }}" alt="" class="rounded-xl max-h-64 mb-5 object-contain">
+        {% endif %}
+
+        <!-- Answers -->
+        <div class="space-y-3 mt-6 mb-6" id="answers">
+            {% for answer in question.answers.all %}
+            <button class="answer-opt w-full text-left px-5 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700"
+                    data-id="{{ answer.id }}"
+                    data-correct="{{ answer.is_correct|yesno:'true,false' }}">
+                {{ answer.text }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Explanation (shown after answering) -->
+        {% if question.explanation %}
+        <div id="explanation" class="hidden bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 text-sm text-blue-800 mb-6">
+            💡 {{ question.explanation }}
+        </div>
+        {% endif %}
+
+        <!-- Navigation -->
+        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+            {% if prev_index is not None %}
+            <a href="{% url 'practice:practice_question_detail' dimension prev_index %}"
+               class="text-gray-500 hover:text-blue-600 text-sm font-medium transition">
+                ← Předchozí
+            </a>
+            {% else %}
+            <span></span>
+            {% endif %}
+
+            <a href="{% url 'practice:practice_list' dimension %}" class="text-xs text-gray-400 hover:text-gray-600">
+                Zpět na seznam
+            </a>
+
+            {% if next_index is not None %}
+            <a href="{% url 'practice:practice_question_detail' dimension next_index %}"
+               id="next-link"
+               class="text-blue-600 hover:text-blue-700 text-sm font-medium transition">
+                Další →
+            </a>
+            {% else %}
+            <span class="text-xs text-gray-400">Poslední otázka</span>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const csrfToken = document.cookie.match('(^|;) ?csrftoken=([^;]*)(;|$)')?.[2] ?? '';
+
+// Answer selection
+document.querySelectorAll('.answer-opt').forEach(btn => {
+    btn.addEventListener('click', function () {
+        if (document.querySelector('.answer-opt.correct, .answer-opt.wrong')) return; // already answered
+        const isCorrect = this.dataset.correct === 'true';
+        document.querySelectorAll('.answer-opt').forEach(b => {
+            b.classList.add('disabled');
+            b.disabled = true;
+            if (b.dataset.correct === 'true') b.classList.add('correct');
+        });
+        if (!isCorrect) this.classList.add('wrong');
+        {% if question.explanation %}
+        document.getElementById('explanation').classList.remove('hidden');
+        {% endif %}
+        // Auto-mark as completed on first correct answer
+        const completeBtn = document.getElementById('complete-btn');
+        if (isCorrect && completeBtn.dataset.completed === 'false') {
+            toggleComplete();
+        }
+    });
+});
+
+// Complete toggle
+async function toggleComplete() {
+    const btn = document.getElementById('complete-btn');
+    const qid = btn.dataset.questionId;
+    const resp = await fetch(`/procvicovani/procvicovat/oznacit/${qid}/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'},
+    });
+    const data = await resp.json();
+    btn.dataset.completed = data.is_completed ? 'true' : 'false';
+    document.getElementById('complete-icon').textContent = data.is_completed ? '✓' : '○';
+    document.getElementById('complete-label').textContent = data.is_completed ? 'Dokončeno' : 'Označit jako dokončeno';
+    btn.className = btn.className.replace(/bg-\w+-\d+|border-\w+-\d+|text-\w+-\d+/g, '');
+    if (data.is_completed) {
+        btn.classList.add('bg-green-50', 'border-green-300', 'text-green-700', 'hover:bg-green-100');
+    } else {
+        btn.classList.add('bg-gray-50', 'border-gray-200', 'text-gray-500', 'hover:bg-gray-100');
+    }
+}
+
+document.getElementById('complete-btn').addEventListener('click', toggleComplete);
+</script>
+{% endblock %}
