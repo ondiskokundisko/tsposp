@@ -5,53 +5,84 @@
 <section class="gradient-bg text-white py-12">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 class="text-3xl font-bold mb-1">Moje výsledky</h1>
-        <p class="text-blue-200">Přehled všech vašich pokusů.</p>
+        <p class="text-blue-200">Přehled všech vašich testů.</p>
     </div>
 </section>
 
 <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    {% if attempts %}
-    <div class="bg-white rounded-2xl shadow-md overflow-hidden animate-fade">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 border-b border-gray-100">
-                <tr>
-                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Dimenze</th>
-                    <th class="text-left px-6 py-3 font-semibold text-gray-600">Datum</th>
-                    <th class="text-right px-6 py-3 font-semibold text-gray-600">Skóre</th>
-                    <th class="text-right px-6 py-3 font-semibold text-gray-600">%</th>
-                    <th class="text-right px-6 py-3 font-semibold text-gray-600"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-                {% for attempt in attempts %}
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-3 text-gray-800 font-medium">
-                        <span class="inline-block px-2 py-0.5 text-xs font-bold rounded-full
-                            {% if attempt.dimension == 'NAM' %}bg-blue-100 text-blue-700
-                            {% elif attempt.dimension == 'UAJ' %}bg-green-100 text-green-700
-                            {% else %}bg-purple-100 text-purple-700{% endif %}">
+    {% if sessions %}
+    <div class="space-y-4 animate-fade">
+        {% for session in sessions %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <!-- Left: date + overall score -->
+                <div class="flex items-start gap-4">
+                    <div class="text-3xl">{% if session.is_complete %}🎯{% else %}📋{% endif %}</div>
+                    <div>
+                        <div class="text-xs text-gray-400 mb-0.5">{{ session.date|date:"d.m.Y H:i" }}</div>
+                        <div class="text-lg font-extrabold
+                            {% if session.percentage >= 60 %}text-green-600
+                            {% elif session.percentage >= 0 %}text-blue-700
+                            {% else %}text-red-500{% endif %}">
+                            {{ session.total_score|floatformat:2 }} bodů
+                        </div>
+                        <div class="text-xs text-gray-400">
+                            z {{ session.total_questions }} otázek · {{ session.percentage }}%
+                            {% if not session.is_complete %}
+                            <span class="text-yellow-600 font-medium ml-1">· Neúplný test</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle: per-dimension pills -->
+                <div class="flex flex-wrap gap-2">
+                    {% for attempt in session.attempts %}
+                    <div class="text-center px-3 py-2 rounded-xl border
+                        {% if attempt.dimension == 'NAM' %}border-blue-200 bg-blue-50
+                        {% elif attempt.dimension == 'UAJ' %}border-green-200 bg-green-50
+                        {% else %}border-purple-200 bg-purple-50{% endif %}">
+                        <div class="text-xs font-bold
+                            {% if attempt.dimension == 'NAM' %}text-blue-700
+                            {% elif attempt.dimension == 'UAJ' %}text-green-700
+                            {% else %}text-purple-700{% endif %}">
                             {{ attempt.dimension }}
-                        </span>
-                        <span class="ml-2 text-gray-600">{{ attempt.get_dimension_display }}</span>
-                    </td>
-                    <td class="px-6 py-3 text-gray-500">{{ attempt.started_at|date:"d.m.Y H:i" }}</td>
-                    <td class="px-6 py-3 text-right text-gray-700">{{ attempt.score|floatformat:2 }}/{{ attempt.total_questions }}</td>
-                    <td class="px-6 py-3 text-right font-bold {% if attempt.percentage >= 60 %}text-green-600{% elif attempt.percentage >= 0 %}text-blue-600{% else %}text-red-500{% endif %}">
-                        {{ attempt.percentage }}%
-                    </td>
-                    <td class="px-6 py-3 text-right">
-                        <a href="{% url 'practice:results' attempt.id %}" class="text-blue-600 hover:underline text-xs">Detail</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </div>
+                        <div class="text-sm font-bold text-gray-700 mt-0.5">
+                            {{ attempt.score|floatformat:2 }}<span class="text-xs font-normal text-gray-400">/{{ attempt.total_questions }}</span>
+                        </div>
+                        <div class="text-xs {% if attempt.percentage >= 0 %}text-gray-500{% else %}text-red-500{% endif %}">
+                            {{ attempt.percentage }}%
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Right: detail button -->
+                <div class="flex-shrink-0">
+                    {% if session.is_complete %}
+                    <a href="{% url 'practice:test_session_detail' session.session_key %}"
+                       class="inline-block bg-blue-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition">
+                        Více informací →
+                    </a>
+                    {% else %}
+                        {% for attempt in session.attempts %}
+                        <a href="{% url 'practice:results' attempt.id %}"
+                           class="bg-gray-100 text-gray-700 text-xs font-semibold px-4 py-2 rounded-xl hover:bg-gray-200 transition block mb-1">
+                            {{ attempt.dimension }} detail →
+                        </a>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
     {% else %}
     <div class="bg-white rounded-2xl shadow-md p-12 text-center text-gray-400 animate-fade">
         <div class="text-5xl mb-4">📊</div>
         <p class="text-lg font-medium">Zatím žádné výsledky.</p>
-        <a href="{% url 'practice:dashboard' %}" class="mt-4 inline-block text-blue-600 hover:underline">Začít procvičovat →</a>
+        <a href="{% url 'practice:start_random_test' %}" class="mt-4 inline-block text-blue-600 hover:underline">Spustit test →</a>
     </div>
     {% endif %}
 </section>

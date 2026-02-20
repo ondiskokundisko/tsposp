@@ -21,5 +21,6 @@ urlpatterns = [
 
     # Results / history
     path('vysledky/<int:attempt_id>/', views.results, name='results'),
+    path('test/<str:session_key>/detail/', views.test_session_detail, name='test_session_detail'),
     path('moje-vysledky/', views.my_results, name='my_results'),
 ]

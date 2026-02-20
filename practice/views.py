@@ -48,6 +48,44 @@ def _is_premium(user):
 # Dashboard
 # ---------------------------------------------------------------------------
 
+def _group_attempts_into_sessions(attempts):
+    """Group a queryset/list of TestAttempts by session_key.
+
+    Returns a list of dicts ordered newest-first:
+      {session_key, attempts (sorted NAM/UAJ/KM), date, total_score,
+       total_questions, percentage, percentage_clamped}
+    """
+    from collections import defaultdict
+    session_map = defaultdict(list)
+    for a in attempts:
+        key = a.session_key or f'solo_{a.id}'
+        session_map[key].append(a)
+
+    sessions = []
+    for key, dims in session_map.items():
+        total_score = sum(a.score for a in dims)
+        total_questions = sum(a.total_questions for a in dims)
+        percentage = round((total_score / total_questions) * 100, 1) if total_questions else 0
+        dims_sorted = sorted(
+            dims,
+            key=lambda a: DIMENSION_ORDER.index(a.dimension) if a.dimension in DIMENSION_ORDER else 99,
+        )
+        sessions.append({
+            'session_key': key,
+            'attempts': dims_sorted,
+            'date': min(a.started_at for a in dims),
+            'total_score': round(total_score, 2),
+            'total_questions': total_questions,
+            'percentage': percentage,
+            'percentage_clamped': max(0.0, min(100.0, percentage)),
+            'is_complete': len(dims) == len(DIMENSION_ORDER) and all(
+                d in [a.dimension for a in dims] for d in DIMENSION_ORDER
+            ),
+        })
+    sessions.sort(key=lambda s: s['date'], reverse=True)
+    return sessions
+
+
 @login_required
 def dashboard(request):
     premium = _is_premium(request.user)
@@ -72,11 +110,12 @@ def dashboard(request):
             'time': DIMENSION_TIMES[code],
         })
 
-    recent_attempts = TestAttempt.objects.filter(user=request.user).order_by('-started_at')[:8]
+    all_recent = list(TestAttempt.objects.filter(user=request.user).order_by('-started_at')[:30])
+    recent_sessions = _group_attempts_into_sessions(all_recent)[:5]
 
     return render(request, 'practice/dashboard.html', {
         'dimensions': dimensions,
-        'recent_attempts': recent_attempts,
+        'recent_sessions': recent_sessions,
         'premium': premium,
     })
 
@@ -443,6 +482,36 @@ def test_complete(request):
 
 
 @login_required
+def test_session_detail(request, session_key):
+    """Full detail for one test session: all 3 dimensions with per-question breakdown."""
+    attempts = list(
+        TestAttempt.objects.filter(user=request.user, session_key=session_key)
+        .prefetch_related('user_answers__question__answers', 'user_answers__selected_answer')
+    )
+    if not attempts:
+        return redirect('practice:my_results')
+
+    attempts_sorted = sorted(
+        attempts,
+        key=lambda a: DIMENSION_ORDER.index(a.dimension) if a.dimension in DIMENSION_ORDER else 99,
+    )
+    total_score = round(sum(a.score for a in attempts), 2)
+    total_questions = sum(a.total_questions for a in attempts)
+    percentage = round((total_score / total_questions) * 100, 1) if total_questions else 0
+
+    return render(request, 'practice/test_session_detail.html', {
+        'session_key': session_key,
+        'attempts': attempts_sorted,
+        'total_score': total_score,
+        'total_questions': total_questions,
+        'percentage': percentage,
+        'percentage_clamped': max(0.0, min(100.0, percentage)),
+        'dimension_names': DIMENSION_NAMES,
+        'date': min(a.started_at for a in attempts),
+    })
+
+
+@login_required
 def results(request, attempt_id):
     attempt = get_object_or_404(TestAttempt, id=attempt_id, user=request.user)
     user_answers = attempt.user_answers.select_related(
@@ -457,8 +526,10 @@ def results(request, attempt_id):
 
 @login_required
 def my_results(request):
-    attempts = TestAttempt.objects.filter(user=request.user).order_by('-started_at')
+    all_attempts = list(TestAttempt.objects.filter(user=request.user).order_by('-started_at'))
+    sessions = _group_attempts_into_sessions(all_attempts)
     return render(request, 'practice/my_results.html', {
-        'attempts': attempts,
+        'sessions': sessions,
         'dimension_names': DIMENSION_NAMES,
+        'dimension_order': DIMENSION_ORDER,
     })
